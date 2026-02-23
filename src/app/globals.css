@@ -18,7 +18,6 @@
   --maya-bubble: #1e293b;
   --user-bubble: #7c3aed;
   --status-green: #22c55e;
-  --avatar-bg: #3b5bdb;
   --font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
 }
 
@@ -29,6 +28,13 @@ body {
   color: var(--text);
   font-family: var(--font);
   -webkit-font-smoothing: antialiased;
+  /* prevent rubber-band scroll on iOS outside the scrollable area */
+  overscroll-behavior: none;
+}
+
+/* Remove blue flash on tap (iOS/Android) */
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ── Layout ───────────────────────────────────── */
@@ -36,6 +42,7 @@ body {
 .app {
   display: flex;
   flex-direction: column;
+  /* dvh adjusts automatically when the mobile keyboard appears */
   height: 100dvh;
   max-width: 720px;
   margin: 0 auto;
@@ -47,7 +54,8 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 20px;
+  /* push down below the status bar / notch on iOS */
+  padding: calc(16px + env(safe-area-inset-top)) 20px 16px;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -113,7 +121,9 @@ body {
 .messages {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  /* -webkit-overflow-scrolling enables momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -147,8 +157,9 @@ body {
 
 .message {
   display: flex;
-  gap: 10px;
-  max-width: 78%;
+  gap: 8px;
+  /* on mobile, allow wider bubbles so text isn't too narrow */
+  max-width: 85%;
 }
 
 .message.maya {
@@ -162,14 +173,14 @@ body {
 }
 
 .avatar-small {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: linear-gradient(135deg, #3b5bdb 0%, #7c3aed 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: white;
   flex-shrink: 0;
@@ -177,10 +188,11 @@ body {
 }
 
 .bubble {
-  padding: 11px 15px;
+  padding: 10px 14px;
   border-radius: 18px;
-  font-size: 15px;
-  line-height: 1.5;
+  /* 16px minimum prevents iOS from zooming when selecting text */
+  font-size: 16px;
+  line-height: 1.45;
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -232,7 +244,7 @@ body {
 /* ── Input area ───────────────────────────────── */
 
 .input-area {
-  padding: 14px 16px;
+  padding: 12px 12px calc(12px + env(safe-area-inset-bottom)) 12px;
   border-top: 1px solid var(--border);
   background: var(--bg);
   flex-shrink: 0;
@@ -240,11 +252,11 @@ body {
 
 .input-form {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: flex-end;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 24px;
+  border-radius: 26px;
   padding: 8px 8px 8px 16px;
   transition: border-color 0.15s;
 }
@@ -260,12 +272,15 @@ body {
   outline: none;
   color: var(--text);
   font-family: var(--font);
-  font-size: 15px;
-  line-height: 1.5;
+  /* 16px prevents iOS Safari from auto-zooming on focus */
+  font-size: 16px;
+  line-height: 1.45;
   resize: none;
   max-height: 120px;
   overflow-y: auto;
   padding: 4px 0;
+  /* Allow smooth scrolling inside textarea on iOS */
+  -webkit-overflow-scrolling: touch;
 }
 
 .input::placeholder {
@@ -280,9 +295,10 @@ body {
   border-radius: 2px;
 }
 
+/* 44×44 minimum touch target (Apple HIG recommendation) */
 .send-button {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: none;
   background: var(--accent);
@@ -293,10 +309,18 @@ body {
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.15s, opacity 0.15s;
+  /* prevent double-tap zoom on the button */
+  touch-action: manipulation;
 }
 
-.send-button:hover:not(:disabled) {
+.send-button:active:not(:disabled) {
   background: var(--accent-hover);
+}
+
+@media (hover: hover) {
+  .send-button:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
 }
 
 .send-button:disabled {
@@ -305,7 +329,7 @@ body {
 }
 
 .send-icon {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   fill: white;
 }
