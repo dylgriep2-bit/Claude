@@ -1,195 +1,89 @@
 "use client";
 
-import { useState, useRef, useEffect, FormEvent } from "react";
+import Link from "next/link";
 
-type Message = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-};
-
-const WELCOME_MESSAGE: Message = {
-  id: "welcome",
-  role: "assistant",
-  content: "hey — what's up?",
-};
-
-export default function Home() {
-  const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
-  const [input, setInput] = useState("");
-  const [isStreaming, setIsStreaming] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const streamingIdRef = useRef<string | null>(null);
-
-  // Auto-scroll on new content
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // Auto-resize textarea
-  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value);
-    const el = e.target;
-    el.style.height = "auto";
-    el.style.height = Math.min(el.scrollHeight, 120) + "px";
-  };
-
-  const sendMessage = async (e?: FormEvent) => {
-    e?.preventDefault();
-    const text = input.trim();
-    if (!text || isStreaming) return;
-
-    // Reset textarea height
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-    }
-
-    const userMsg: Message = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: text,
-    };
-
-    const assistantId = `maya-${Date.now() + 1}`;
-    streamingIdRef.current = assistantId;
-
-    const assistantMsg: Message = {
-      id: assistantId,
-      role: "assistant",
-      content: "",
-    };
-
-    const nextMessages = [...messages, userMsg];
-    setMessages([...nextMessages, assistantMsg]);
-    setInput("");
-    setIsStreaming(true);
-
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: nextMessages.map(({ role, content }) => ({
-            role,
-            content,
-          })),
-        }),
-      });
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      if (!res.body) throw new Error("No response body");
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let accumulated = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        accumulated += decoder.decode(value, { stream: true });
-
-        const id = streamingIdRef.current;
-        setMessages((prev) =>
-          prev.map((m) => (m.id === id ? { ...m, content: accumulated } : m))
-        );
-      }
-    } catch (err) {
-      console.error("Stream error:", err);
-      // Replace the empty assistant bubble with an error notice
-      const id = streamingIdRef.current;
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === id
-            ? { ...m, content: "something went wrong, try again?" }
-            : m
-        )
-      );
-    } finally {
-      setIsStreaming(false);
-      streamingIdRef.current = null;
-      textareaRef.current?.focus();
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  const isTyping = isStreaming;
-
+export default function LandingPage() {
   return (
-    <div className="app">
-      {/* ── Header ── */}
-      <header className="header">
-        <div className="avatar">M</div>
-        <div className="header-info">
-          <h1 className="character-name">Maya</h1>
-          <span className="status">
-            <span className={`status-dot ${isTyping ? "typing" : ""}`} />
-            {isTyping ? "typing…" : "online"}
-          </span>
-        </div>
-      </header>
+    <div className="landing">
+      {/* Ambient background orbs */}
+      <div className="landing-orb orb-1" />
+      <div className="landing-orb orb-2" />
+      <div className="landing-orb orb-3" />
 
-      {/* ── Messages ── */}
-      <main className="messages">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`message ${msg.role === "user" ? "user" : "maya"}`}
+      <div className="landing-content">
+        <div className="landing-badge">PREMIUM</div>
+        <h1 className="landing-title">
+          Connections that
+          <br />
+          feel <span className="landing-accent">real</span>
+        </h1>
+        <p className="landing-subtitle">
+          Meet AI companions with genuine personalities, real opinions, and
+          conversations that go deeper than small talk.
+        </p>
+
+        <Link href="/companions" className="landing-cta">
+          Meet Your Companion
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            {msg.role === "assistant" && (
-              <div className="avatar-small">M</div>
-            )}
-            <div className="bubble">
-              {msg.content === "" ? (
-                <span className="typing-indicator">
-                  <span />
-                  <span />
-                  <span />
-                </span>
-              ) : (
-                msg.content
-              )}
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </Link>
+
+        <div className="landing-features">
+          <div className="landing-feature">
+            <div className="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
             </div>
+            <h3>Genuine Personalities</h3>
+            <p>Each companion has their own life, opinions, and story</p>
           </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </main>
+          <div className="landing-feature">
+            <div className="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </div>
+            <h3>Deep Conversations</h3>
+            <p>Not scripted, not shallow — real back-and-forth</p>
+          </div>
+          <div className="landing-feature">
+            <div className="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+            </div>
+            <h3>Premium Experience</h3>
+            <p>Exclusive companions, priority responses, no limits</p>
+          </div>
+        </div>
 
-      {/* ── Input ── */}
-      <div className="input-area">
-        <form className="input-form" onSubmit={sendMessage}>
-          <textarea
-            ref={textareaRef}
-            className="input"
-            value={input}
-            onChange={handleInput}
-            onKeyDown={handleKeyDown}
-            placeholder="Message Maya…"
-            rows={1}
-            disabled={isStreaming}
-          />
-          <button
-            type="submit"
-            className="send-button"
-            disabled={!input.trim() || isStreaming}
-            aria-label="Send"
-          >
-            {/* Paper-plane icon */}
-            <svg
-              className="send-icon"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-            </svg>
-          </button>
-        </form>
+        <div className="landing-social-proof">
+          <div className="avatar-stack">
+            {["M", "K", "L", "A", "R"].map((letter, i) => (
+              <div
+                key={letter}
+                className="avatar-stack-item"
+                style={{ zIndex: 5 - i }}
+              >
+                {letter}
+              </div>
+            ))}
+          </div>
+          <p className="social-proof-text">
+            5 unique companions ready to chat
+          </p>
+        </div>
       </div>
     </div>
   );

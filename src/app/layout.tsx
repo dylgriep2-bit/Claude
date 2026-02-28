@@ -2,8 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Maya",
-  description: "A companionship app",
+  title: "Aura — Premium Companionship",
+  description:
+    "Meet AI companions with genuine personalities and deep conversations",
 };
 
 // viewport-fit=cover lets the app extend under the notch/home bar on iOS;
