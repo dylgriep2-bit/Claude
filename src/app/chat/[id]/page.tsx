@@ -88,10 +88,12 @@ export default function ChatPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           companionId,
-          messages: nextMessages.map(({ role, content }) => ({
-            role,
-            content,
-          })),
+          messages: nextMessages
+            .filter((m) => m.id !== "welcome")
+            .map(({ role, content }) => ({
+              role,
+              content,
+            })),
         }),
       });
 

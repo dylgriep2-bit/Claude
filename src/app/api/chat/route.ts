@@ -12,35 +12,41 @@ export async function POST(request: NextRequest) {
     return new Response("Companion not found", { status: 404 });
   }
 
-  const stream = client.messages.stream({
-    model: "claude-opus-4-6",
-    max_tokens: 1024,
-    thinking: { type: "adaptive" },
-    system: companion.systemPrompt,
-    messages,
-  });
+  try {
+    const stream = client.messages.stream({
+      model: "claude-opus-4-6",
+      max_tokens: 1024,
+      thinking: { type: "adaptive" },
+      system: companion.systemPrompt,
+      messages,
+    });
 
-  const readable = new ReadableStream({
-    async start(controller) {
-      try {
-        for await (const event of stream) {
-          if (
-            event.type === "content_block_delta" &&
-            event.delta.type === "text_delta"
-          ) {
-            controller.enqueue(
-              new TextEncoder().encode(event.delta.text)
-            );
+    const readable = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const event of stream) {
+            if (
+              event.type === "content_block_delta" &&
+              event.delta.type === "text_delta"
+            ) {
+              controller.enqueue(
+                new TextEncoder().encode(event.delta.text)
+              );
+            }
           }
+          controller.close();
+        } catch (err) {
+          controller.error(err);
         }
-        controller.close();
-      } catch (err) {
-        controller.error(err);
-      }
-    },
-  });
+      },
+    });
 
-  return new Response(readable, {
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
-  });
+    return new Response(readable, {
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Chat API error:", message);
+    return new Response(message, { status: 500 });
+  }
 }
