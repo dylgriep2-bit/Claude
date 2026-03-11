@@ -2,16 +2,15 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Maya",
-  description: "A companionship app",
+  title: "Rooftop",
+  description: "An immersive AI companion experience",
 };
 
-// viewport-fit=cover lets the app extend under the notch/home bar on iOS;
-// we then use env(safe-area-inset-*) in CSS to pad content back into view.
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: "#0a0a0f",
 };
 
 export default function RootLayout({
@@ -21,6 +20,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Nunito:wght@300;400;500;600&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body>{children}</body>
     </html>
   );
