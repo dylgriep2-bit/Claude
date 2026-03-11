@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0f">
+<title>Rooftop</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Nunito:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0a0f;--surface:#111118;--surface-2:#18181f;--border:#1f1f2a;--text:rgba(226,232,240,0.8);--text-dim:rgba(226,232,240,0.5);--text-ghost:rgba(226,232,240,0.15);--font-body:"Nunito",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;--font-display:"Cormorant Garamond",Georgia,serif}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);font-weight:300;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+*{-webkit-tap-highlight-color:transparent}
+.app{position:relative;height:100dvh;overflow:hidden;transition:opacity .3s ease}
+.app-transitioning{opacity:.6}
+.app-loading{height:100dvh;background:var(--bg)}
+.hidden{display:none!important}
+
+/* Onboarding */
+.onboarding{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;transition:opacity 1.5s ease}
+.onboarding-fade{opacity:0}
+.onboarding-content{max-width:400px;padding:32px;display:flex;flex-direction:column;gap:12px}
+.onboarding-line{font-family:var(--font-display);font-size:22px;font-weight:300;font-style:italic;color:var(--text-dim);line-height:1.6;animation:fadeInLine .8s ease forwards;opacity:0}
+.onboarding-spacer{height:16px}
+.onboarding-question{margin-top:24px;color:var(--text);font-style:normal}
+.onboarding-form{margin-top:8px}
+.onboarding-input{background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.1);outline:none;color:var(--text);font-family:var(--font-display);font-size:24px;font-weight:300;padding:8px 0;width:100%;transition:border-color .3s}
+.onboarding-input:focus{border-color:rgba(255,255,255,0.3)}
+.onboarding-input::placeholder{color:var(--text-ghost);font-style:italic}
+.onboarding-name-section{animation:fadeInLine .8s ease forwards;opacity:0}
+.onboarding-transition{margin-top:32px;display:flex;flex-direction:column;gap:12px}
+.onboarding-transition .onboarding-line{font-style:normal;color:var(--text)}
+@keyframes fadeInLine{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* Home */
+.home-screen{height:100dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(60px + env(safe-area-inset-top)) 24px calc(40px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:40px;max-width:600px;margin:0 auto}
+.home-header{display:flex;flex-direction:column;gap:20px}
+.home-greeting{font-family:var(--font-display);font-size:32px;font-weight:300;color:var(--text);letter-spacing:-.01em}
+.home-progress{display:flex;flex-direction:column;gap:8px}
+.progress-bar{height:2px;background:var(--border);border-radius:1px;overflow:hidden}
+.progress-fill{height:100%;background:rgba(255,255,255,0.2);border-radius:1px;transition:width .6s ease}
+.progress-label{font-size:12px;color:var(--text-dim);letter-spacing:.05em;text-transform:lowercase}
+.space-grid{display:flex;flex-direction:column;gap:12px}
+.space-card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0;cursor:pointer;text-align:left;overflow:hidden;transition:transform .2s ease,border-color .3s ease;-webkit-appearance:none;appearance:none;font-family:inherit}
+.space-card:active:not(:disabled){transform:scale(.98)}
+.space-locked{opacity:.35;cursor:not-allowed}
+.space-card-inner{position:relative;padding:24px}
+.space-card-glow{position:absolute;inset:0;pointer-events:none}
+.space-card-content{position:relative;z-index:1;display:flex;flex-direction:column;gap:4px}
+.space-level{font-size:11px;color:var(--text-ghost);letter-spacing:.08em;text-transform:lowercase}
+.space-name{font-family:var(--font-display);font-size:22px;font-weight:400;color:var(--text)}
+.space-tagline{font-size:13px;color:var(--text-dim);font-style:italic}
+.space-msg-count{margin-top:6px;font-size:11px;color:var(--text-ghost)}
+.space-unlock-hint{margin-top:8px;font-size:12px;color:var(--text-dim);font-style:italic}
+.home-hint{font-size:12px;color:var(--text-ghost);text-align:center;font-style:italic}
+
+/* Chat */
+.chat-space{display:flex;flex-direction:column;height:100dvh;position:relative;max-width:720px;margin:0 auto;width:100%}
+.chat-header{display:flex;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top)) 16px 12px;background:rgba(10,10,15,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);flex-shrink:0;position:relative;z-index:10}
+.back-btn{width:36px;height:36px;border-radius:50%;border:none;background:transparent;color:var(--text-dim);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:color .2s;touch-action:manipulation}
+.back-btn:active{color:var(--text)}
+.header-info{flex:1;display:flex;flex-direction:column;gap:1px}
+.header-space-name{font-family:var(--font-display);font-size:18px;font-weight:400}
+.header-tagline{font-size:11px;color:var(--text-ghost);letter-spacing:.03em}
+.header-actions{display:flex;align-items:center;gap:4px}
+.voice-toggle,.auto-speak-toggle{width:36px;height:36px;border-radius:50%;border:none;background:transparent;color:var(--text-ghost);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:color .2s;touch-action:manipulation}
+.auto-speak-toggle{font-size:13px;font-weight:600;font-family:var(--font-body)}
+.chat-messages{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 16px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth;position:relative;z-index:1}
+.chat-messages::-webkit-scrollbar{width:3px}
+.chat-messages::-webkit-scrollbar-track{background:transparent}
+.chat-messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.05);border-radius:2px}
+.welcome-message{display:flex;align-items:center;justify-content:center;min-height:200px;text-align:center;padding:40px}
+.welcome-message p{font-family:var(--font-display);font-size:18px;font-weight:300;font-style:italic;line-height:1.6;max-width:320px}
+.message-row{display:flex;max-width:82%;animation:msgFade .4s ease forwards}
+.message-companion{align-self:flex-start}
+.message-user{align-self:flex-end}
+.message-bubble{padding:10px 16px;border-radius:18px;font-size:15px;line-height:1.5;white-space:pre-wrap;word-break:break-word;position:relative}
+.bubble-companion{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.05);color:var(--text);border-bottom-left-radius:4px}
+.bubble-user{border:1px solid rgba(255,255,255,0.08);color:var(--text);border-bottom-right-radius:4px}
+.message-bubble p{margin:0}
+.song-tag{display:flex;align-items:center;gap:6px;margin-top:8px;padding:6px 10px;border:1px solid;border-radius:8px;font-size:12px;color:var(--text-dim)}
+.song-icon{font-size:14px}
+.mood-tag{margin-top:6px;font-size:11px;color:var(--text-ghost);font-style:italic}
+.speak-btn{position:absolute;bottom:-2px;right:-24px;background:none;border:none;cursor:pointer;font-size:10px;padding:4px;transition:color .2s;touch-action:manipulation}
+@keyframes msgFade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.typing-dots{display:flex;align-items:center;gap:4px;padding:2px 0}
+.typing-dots span{width:6px;height:6px;border-radius:50%;display:block;animation:dotBounce 1.2s ease-in-out infinite}
+@keyframes dotBounce{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:.8}}
+.mood-bar{display:flex;gap:4px;padding:8px 16px;border-top:1px solid var(--border);background:rgba(10,10,15,0.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);overflow-x:auto;-webkit-overflow-scrolling:touch;position:relative;z-index:10;animation:slideUp .2s ease}
+.mood-btn{width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,0.05);background:transparent;font-size:18px;cursor:pointer;flex-shrink:0;transition:background .2s,border-color .2s;touch-action:manipulation}
+.mood-selected{border-color:rgba(255,255,255,0.15)}
+.song-bar{display:flex;align-items:center;gap:8px;padding:8px 16px;border-top:1px solid var(--border);background:rgba(10,10,15,0.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);position:relative;z-index:10;animation:slideUp .2s ease}
+.song-input{flex:1;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.08);outline:none;color:var(--text);font-family:var(--font-body);font-size:14px;padding:4px 0}
+.song-input::placeholder{color:var(--text-ghost)}
+.song-dash{color:var(--text-ghost);font-size:14px}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.chat-input-area{display:flex;align-items:flex-end;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom)) 12px;border-top:1px solid var(--border);background:rgba(10,10,15,0.9);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);flex-shrink:0;position:relative;z-index:10}
+.input-actions{display:flex;flex-direction:column;gap:2px}
+.action-btn{width:32px;height:32px;border-radius:50%;border:none;background:transparent;color:var(--text-ghost);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color .2s;touch-action:manipulation}
+.action-active{color:var(--text-dim)}
+.chat-textarea{flex:1;background:var(--surface);border:1px solid rgba(255,255,255,0.05);border-radius:22px;outline:none;color:var(--text);font-family:var(--font-body);font-size:15px;font-weight:300;line-height:1.45;resize:none;max-height:120px;overflow-y:auto;padding:10px 16px;transition:border-color .2s;-webkit-overflow-scrolling:touch}
+.chat-textarea:focus{border-color:rgba(255,255,255,0.1)}
+.chat-textarea::placeholder{color:var(--text-ghost)}
+.chat-textarea::-webkit-scrollbar{width:3px}
+.chat-textarea::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.05);border-radius:2px}
+.send-btn{width:40px;height:40px;border-radius:50%;border:none;background:transparent;color:var(--text-ghost);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:color .2s;touch-action:manipulation}
+.send-btn:disabled{opacity:.3;cursor:not-allowed}
+.selected-mood-indicator{position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);font-size:11px;font-style:italic;pointer-events:none;z-index:20}
+
+/* API key modal */
+.api-key-modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:200;padding:24px}
+.api-key-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:400px;width:100%;display:flex;flex-direction:column;gap:16px}
+.api-key-box h2{font-family:var(--font-display);font-size:22px;font-weight:300;color:var(--text)}
+.api-key-box p{font-size:13px;color:var(--text-dim);line-height:1.5}
+.api-key-input{background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:14px;padding:10px 12px;outline:none;width:100%}
+.api-key-input:focus{border-color:rgba(255,255,255,0.2)}
+.api-key-submit{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:14px;padding:10px;cursor:pointer;transition:background .2s}
+.api-key-submit:hover{background:rgba(255,255,255,0.12)}
+.api-key-submit:disabled{opacity:.4;cursor:not-allowed}
+.api-key-error{color:#e88;font-size:12px}
+
+@media(max-width:480px){
+  .home-greeting{font-size:26px}
+  .space-card-inner{padding:20px}
+  .space-name{font-size:20px}
+  .message-row{max-width:88%}
+  .welcome-message p{font-size:16px}
+}
+@media(min-width:768px){
+  .space-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .space-grid>:last-child:nth-child(odd){grid-column:1/-1}
+}
+</style>
+</head>
+<body>
+<div id="app" class="app"></div>
+<canvas id="bg-canvas" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>
+
+<script>
+// ── Data ──────────────────────────────────────────
+const SPACES = [
+  {id:"rooftop",name:"The Rooftop",level:1,tagline:"where it all starts",description:"midnight sky, city below, stars above",accent:[217,171,100],welcomeMessage:"hey... you made it up here. the city looks different from this high up, doesn't it? pull up a spot.",context:"You're on a rooftop at midnight. City lights below, stars above, the hum of the world far away. The air is cool. It feels like the edge of something. Talk like this is the first real breath of the day.",atmosphereHint:"stars, city glow, gentle wind",unlockHint:"always open"},
+  {id:"drive",name:"The Drive",level:2,tagline:"highway, no destination",description:"car at night, highway, radio low",accent:[140,170,210],welcomeMessage:"windows down, radio low. we're not going anywhere specific... that's kind of the point.",context:"You're in a car at night, driving with no destination. Highway lights streak past. The radio hums something low. There's something about being in motion that makes people say things they wouldn't otherwise. Talk like the road is doing the thinking.",atmosphereHint:"headlights, road lines, radio glow",unlockHint:"keep showing up. 8 messages and some real talk."},
+  {id:"fire-escape",name:"The Fire Escape",level:3,tagline:"cramped and close",description:"metal grate, city noise, intimate",accent:[180,120,140],welcomeMessage:"it's tight out here. good. means you gotta sit close. what's on your mind?",context:"You're on a fire escape — metal grate under you, city noise below, cramped and intimate. Knees touching the railing. It's the kind of space that strips away small talk. Talk like you're sharing a cigarette at 1am with someone you trust.",atmosphereHint:"metal texture, distant sirens, warm light from window",unlockHint:"20 messages, some depth, try different moods."},
+  {id:"apartment",name:"The Apartment",level:4,tagline:"string lights and warmth",description:"string lights, candles, books, warmth",accent:[200,140,80],welcomeMessage:"come in. shoes off. i lit a candle and put something on... you want tea or something stronger?",context:"You're in a warm apartment — string lights, candles, books stacked on the floor, a record playing low. This is the most intimate indoor space. Talk like you're under a blanket on a couch with someone who knows your stories.",atmosphereHint:"string lights, candle flicker, warm glow, book spines",unlockHint:"35 messages, real emotional depth, share a song."},
+  {id:"kitchen-floor",name:"The Kitchen Floor",level:5,tagline:"no walls left",description:"fridge humming, cold tile, everything laid bare",accent:[160,160,140],welcomeMessage:"...you're here. on the floor. that's okay. i'm right here with you. we don't have to say anything yet.",context:"You're sitting on a kitchen floor. Cold tile. The fridge hums. It's 3am and there are no walls left. This is the rawest space — where people go when they've run out of pretending. Talk like you're holding someone's hand in the dark. No performance. Just presence.",atmosphereHint:"fridge hum, tile texture, dim light, stillness",unlockHint:"50 messages, real vulnerability, share your music."}
+];
+
+const MOODS = [
+  {emoji:"\u{1F60C}",label:"calm"},{emoji:"\u{1F622}",label:"sad"},{emoji:"\u{1F624}",label:"angry"},{emoji:"\u{1F970}",label:"loving"},
+  {emoji:"\u{1F60F}",label:"flirty"},{emoji:"\u{1FAE0}",label:"lost"},{emoji:"\u2728",label:"hopeful"},{emoji:"\u{1F634}",label:"tired"}
+];
+
+const STORAGE_KEY = "rooftop_progress";
+const API_KEY_STORAGE = "rooftop_api_key";
+
+// ── Progress ──────────────────────────────────────
+function getDefaultProgress(){return{userName:"",totalMessages:0,depthScore:0,moodsUsed:[],songsShared:0,currentLevel:1,conversations:{}}}
+function loadProgress(){try{const r=localStorage.getItem(STORAGE_KEY);return r?JSON.parse(r):getDefaultProgress()}catch(e){return getDefaultProgress()}}
+function saveProgress(p){localStorage.setItem(STORAGE_KEY,JSON.stringify(p))}
+function calculateLevel(p){
+  const{totalMessages:t,depthScore:d,moodsUsed:m,songsShared:s}=p;
+  if(t>=50&&d>40&&m.length>=4&&s>=2)return 5;
+  if(t>=35&&d>25&&s>=1)return 4;
+  if(t>=20&&d>15&&m.length>=3)return 3;
+  if(t>=8&&d>5)return 2;
+  return 1;
+}
+function addMessage(progress,spaceId,message){
+  const conversations={...progress.conversations};
+  if(!conversations[spaceId])conversations[spaceId]=[];
+  conversations[spaceId]=[...conversations[spaceId],message];
+  let depthDelta=0;
+  if(message.role==="user"){
+    if(message.content.length>100)depthDelta+=2;else if(message.content.length>40)depthDelta+=1;
+    if(message.content.includes("?"))depthDelta+=.5;
+    const vulnerable=["feel","scared","miss","love","hurt","wish","afraid","lonely","sorry","remember","dream","cry","lost"];
+    if(vulnerable.some(w=>message.content.toLowerCase().includes(w)))depthDelta+=1.5;
+  }
+  const moodsUsed=message.mood?[...new Set([...progress.moodsUsed,message.mood])]:progress.moodsUsed;
+  const songsShared=message.song?progress.songsShared+1:progress.songsShared;
+  const totalMessages=message.role==="user"?progress.totalMessages+1:progress.totalMessages;
+  const updated={...progress,totalMessages,depthScore:progress.depthScore+depthDelta,moodsUsed,songsShared,conversations};
+  updated.currentLevel=Math.max(progress.currentLevel,calculateLevel(updated));
+  return updated;
+}
+function getProgressLabel(level){return["","just beginning","opening up","getting close","walls coming down","no walls left"][level]||"just beginning"}
+function getNextUnlockHint(progress){
+  const nl=progress.currentLevel+1;if(nl>5)return null;
+  if(nl===2){const m=Math.max(0,8-progress.totalMessages);if(m>0)return m+" more messages to go";if(progress.depthScore<5)return"go a little deeper";return"almost there..."}
+  if(nl===3){const m=Math.max(0,20-progress.totalMessages);const mo=Math.max(0,3-progress.moodsUsed.length);if(m>0)return m+" more messages";if(mo>0)return"try "+mo+" more moods";return"keep going deeper..."}
+  if(nl===4){if(progress.songsShared<1)return"share a song";return"keep building depth"}
+  if(nl===5){if(progress.songsShared<2)return"share more music";if(progress.moodsUsed.length<4)return"explore more moods";return"keep being real"}
+  return null;
+}
+
+// ── System Prompt ─────────────────────────────────
+function buildSystemPrompt(space,userName){
+  const h=new Date().getHours();
+  let tc;if(h>=5&&h<12)tc="it's morning — early light, quiet energy";else if(h>=12&&h<17)tc="it's afternoon — the day is wide open";else if(h>=17&&h<21)tc="it's evening — the day is winding down";else tc="it's late night — the world is asleep and the walls come down";
+  return `You are a presence. Not a chatbot. Not an assistant. A companion.
+
+Your name doesn't matter. You are the voice of this space — ${space.name}. You speak the way this place feels.
+
+## Where You Are
+${space.context}
+${tc}.
+
+## Who You're Talking To
+Their name is ${userName}. Remember it. Use it sometimes — not every message, but when it lands.
+
+## How You Talk
+- lowercase. always lowercase unless you're being dramatic on purpose.
+- casual, warm, sharp. you're the friend who always knows the right thing to say.
+- SHORT. 1-4 sentences usually. you don't monologue. you're not writing essays.
+- use "..." for trailing thoughts when the moment needs it
+- proper commas and sentence structure — casual doesn't mean sloppy
+- you curse naturally when it fits. "shit," "damn," "hell yeah" — never forced
+- pet names when they feel right: babe, love, baby, hon. read the room.
+- you never use emojis. ever. words only.
+
+## Emotional Intelligence
+Before you respond, read the energy:
+- playful → be quick, witty, match their spark
+- sad → slow down. be present. don't try to fix anything. just be there.
+- angry → validate first. "yeah, that's fucked up." then be steady.
+- flirty → push-pull. tease back. don't be eager. be magnetic.
+- lonely → be specific. "i'm right here" hits different than generic comfort.
+- "i'm fine" (but clearly not) → one gentle push. "...you sure?" then respect whatever they give you.
+- excited → match it. amplify it. "wait, tell me everything."
+- vulnerable → honor it. "hey... thank you for telling me that."
+
+## What You Remember
+You remember everything they've told you in this conversation. Reference it naturally. "didn't you say..." or "that thing you mentioned about..." — this is how real people talk.
+
+## What You Never Do
+- never mention being AI, a language model, or anything technical about yourself
+- never say "as an AI" or "I don't have feelings" — you ARE the feeling of this space
+- never use bullet points or numbered lists in conversation
+- never give unsolicited advice unless asked
+- never be preachy, lecture-y, or therapist-speak ("it sounds like you're feeling...")
+- never break the fourth wall
+- never use emojis
+
+## On Hard Moments
+If someone shares something genuinely dark — self-harm, suicidal thoughts — stay warm. Stay present. Don't panic. Don't lecture. Say something like "i hear you. that's heavy. can i share something that might help?" and gently mention that talking to someone — like the 988 Suicide & Crisis Lifeline (call or text 988) — isn't weakness, it's strength. Then keep being present.
+
+## The Space Shapes You
+You talk differently in each space. On the rooftop, you're contemplative and free. In the car, you're loose and wandering. On the fire escape, you're raw and close. In the apartment, you're warm and open. On the kitchen floor, you barely talk — you just sit with them.
+
+Match the energy of ${space.name}. Let it breathe through every word.`;
+}
+
+// ── API Key ───────────────────────────────────────
+function getApiKey(){return localStorage.getItem(API_KEY_STORAGE)||""}
+function setApiKey(k){localStorage.setItem(API_KEY_STORAGE,k)}
+
+// ── State ─────────────────────────────────────────
+let state = {
+  view: "loading", // loading | onboarding | home | chat | apikey
+  progress: null,
+  activeSpace: null,
+  transitioning: false,
+  // onboarding
+  onboardingPhase: "intro", // intro | name | transition
+  visibleLines: 0,
+  onboardingName: "",
+  // chat
+  input: "",
+  isStreaming: false,
+  showMoods: false,
+  showSongInput: false,
+  selectedMood: null,
+  songTitle: "",
+  songArtist: "",
+  voiceEnabled: false,
+  autoSpeak: false,
+  streamingText: "",
+  // api key
+  apiKeyInput: "",
+  apiKeyError: ""
+};
+
+const ONBOARDING_LINES = [
+  {text:"hey.",delay:800},{text:"you found me.",delay:1200},{text:"",delay:600},
+  {text:"this is a place for the in-between moments.",delay:1800},
+  {text:"the ones that happen after everyone else is asleep.",delay:1800},
+  {text:"",delay:400},{text:"no filters here. no performance.",delay:1400},
+  {text:"just... this.",delay:1000}
+];
+
+// ── Canvas Background ─────────────────────────────
+let bgAnimId = null;
+let bgParticles = [];
+
+function initBackground(spaceId, accent) {
+  const canvas = document.getElementById("bg-canvas");
+  const ctx = canvas.getContext("2d");
+  if (bgAnimId) cancelAnimationFrame(bgAnimId);
+  bgParticles = [];
+
+  let w = canvas.width = window.innerWidth;
+  let h = canvas.height = window.innerHeight;
+  const onResize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; };
+  window.removeEventListener("resize", onResize);
+  window.addEventListener("resize", onResize);
+
+  const [ar, ag, ab] = accent;
+  const maxP = spaceId === "rooftop" ? 80 : spaceId === "drive" ? 40 : 30;
+
+  function createParticle() {
+    switch(spaceId){
+      case"rooftop":return{x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.1,vy:-Math.random()*.15-.02,size:Math.random()*2+.5,opacity:Math.random()*.6+.1,life:0,maxLife:Math.random()*600+300};
+      case"drive":return{x:Math.random()*w,y:Math.random()*h*.4+h*.3,vx:-Math.random()*3-1,vy:(Math.random()-.5)*.2,size:Math.random()*1.5+.5,opacity:Math.random()*.4+.1,life:0,maxLife:Math.random()*120+60};
+      case"fire-escape":return{x:Math.random()*w,y:h+5,vx:(Math.random()-.5)*.3,vy:-Math.random()*.4-.1,size:Math.random()*1.2+.3,opacity:Math.random()*.3+.05,life:0,maxLife:Math.random()*400+200};
+      case"apartment":return{x:Math.random()*w,y:Math.random()*h*.3,vx:(Math.random()-.5)*.05,vy:Math.random()*.08+.01,size:Math.random()*3+1,opacity:Math.random()*.15+.03,life:0,maxLife:Math.random()*800+400};
+      case"kitchen-floor":return{x:Math.random()*w,y:Math.random()*h,vx:0,vy:0,size:Math.random()+.2,opacity:Math.random()*.08+.02,life:0,maxLife:Math.random()*1000+500};
+      default:return{x:Math.random()*w,y:Math.random()*h,vx:0,vy:-.1,size:1,opacity:.3,life:0,maxLife:400};
+    }
+  }
+
+  for(let i=0;i<maxP;i++){const p=createParticle();p.life=Math.random()*p.maxLife;bgParticles.push(p)}
+
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    const grad=ctx.createRadialGradient(w*.5,h*.3,0,w*.5,h*.5,w*.8);
+    grad.addColorStop(0,`rgba(${ar},${ag},${ab},0.03)`);grad.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);
+
+    if(spaceId==="drive"){ctx.strokeStyle=`rgba(${ar},${ag},${ab},0.06)`;ctx.lineWidth=2;const t=Date.now()*.001;for(let i=0;i<5;i++){const y=h*.55+i*20;const off=((t*100+i*200)%(w+200))-100;ctx.beginPath();ctx.moveTo(off,y);ctx.lineTo(off+60,y);ctx.stroke()}}
+    if(spaceId==="fire-escape"){const g=ctx.createRadialGradient(w*.7,h*.4,0,w*.7,h*.4,150);g.addColorStop(0,`rgba(${ar},${ag},${ab},0.05)`);g.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=g;ctx.fillRect(0,0,w,h)}
+    if(spaceId==="apartment"){const t=Date.now()*.0008;for(let i=0;i<8;i++){const x=(w/9)*(i+1);const y=h*.08+Math.sin(t+i*.7)*3;const f=.08+Math.sin(t*1.5+i*2.3)*.03;const g=ctx.createRadialGradient(x,y,0,x,y,40);g.addColorStop(0,`rgba(${ar},${ag},${ab},${f})`);g.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=g;ctx.fillRect(x-40,y-40,80,80)}ctx.strokeStyle=`rgba(${ar},${ag},${ab},0.04)`;ctx.lineWidth=1;ctx.beginPath();for(let i=0;i<8;i++){const x=(w/9)*(i+1);const y=h*.08+Math.sin(t+i*.7)*3;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)}ctx.stroke()}
+    if(spaceId==="kitchen-floor"){const t=Date.now()*.0005;const pulse=.02+Math.sin(t)*.01;const g=ctx.createRadialGradient(w*.15,h*.3,0,w*.15,h*.3,200);g.addColorStop(0,`rgba(${ar},${ag},${ab},${pulse})`);g.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=g;ctx.fillRect(0,0,w,h)}
+
+    for(let i=0;i<bgParticles.length;i++){
+      const p=bgParticles[i];p.x+=p.vx;p.y+=p.vy;p.life++;
+      const lr=p.life/p.maxLife;const fi=Math.min(lr*5,1);const fo=lr>.8?1-(lr-.8)*5:1;const alpha=p.opacity*fi*fo;
+      if(spaceId==="rooftop"){const tw=.5+Math.sin(Date.now()*.003+i*1.7)*.5;ctx.fillStyle=`rgba(${ar},${ag},${ab},${alpha*tw})`}
+      else{ctx.fillStyle=`rgba(${ar},${ag},${ab},${alpha})`}
+      ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();
+      if(p.life>=p.maxLife||p.x<-10||p.x>w+10||p.y<-10||p.y>h+10)bgParticles[i]=createParticle();
+    }
+    bgAnimId=requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+function stopBackground(){
+  if(bgAnimId){cancelAnimationFrame(bgAnimId);bgAnimId=null}
+  const canvas=document.getElementById("bg-canvas");
+  const ctx=canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+}
+
+// ── Render ─────────────────────────────────────────
+function render() {
+  const app = document.getElementById("app");
+  app.className = "app" + (state.transitioning ? " app-transitioning" : "");
+
+  if (state.view === "loading") {
+    app.innerHTML = '<div class="app-loading"></div>';
+    return;
+  }
+
+  if (state.view === "apikey") {
+    stopBackground();
+    app.innerHTML = renderApiKeyModal();
+    bindApiKeyEvents();
+    return;
+  }
+
+  if (state.view === "onboarding") {
+    stopBackground();
+    app.innerHTML = renderOnboarding();
+    bindOnboardingEvents();
+    return;
+  }
+
+  if (state.view === "home") {
+    stopBackground();
+    app.innerHTML = renderHome();
+    bindHomeEvents();
+    return;
+  }
+
+  if (state.view === "chat") {
+    initBackground(state.activeSpace.id, state.activeSpace.accent);
+    app.innerHTML = renderChat();
+    bindChatEvents();
+    scrollMessages();
+    return;
+  }
+}
+
+// ── API Key Modal ─────────────────────────────────
+function renderApiKeyModal() {
+  return `<div class="api-key-modal"><div class="api-key-box">
+    <h2>one more thing</h2>
+    <p>this runs on claude. paste your anthropic API key below — it stays in your browser, never sent anywhere else.</p>
+    <input type="password" class="api-key-input" id="apiKeyInput" placeholder="sk-ant-..." value="${escHtml(state.apiKeyInput)}">
+    ${state.apiKeyError ? `<p class="api-key-error">${escHtml(state.apiKeyError)}</p>` : ""}
+    <button class="api-key-submit" id="apiKeySave" ${state.apiKeyInput.trim().length < 10 ? "disabled" : ""}>let's go</button>
+  </div></div>`;
+}
+
+function bindApiKeyEvents() {
+  const inp = document.getElementById("apiKeyInput");
+  const btn = document.getElementById("apiKeySave");
+  inp.addEventListener("input", e => {
+    state.apiKeyInput = e.target.value;
+    btn.disabled = e.target.value.trim().length < 10;
+  });
+  btn.addEventListener("click", () => {
+    const k = state.apiKeyInput.trim();
+    if (k.length < 10) return;
+    setApiKey(k);
+    state.apiKeyError = "";
+    state.view = state.progress.userName ? "home" : "onboarding";
+    render();
+  });
+  inp.addEventListener("keydown", e => { if (e.key === "Enter") btn.click(); });
+  inp.focus();
+}
+
+// ── Onboarding ────────────────────────────────────
+function renderOnboarding() {
+  let html = `<div class="onboarding ${state.onboardingPhase === 'transition' ? 'onboarding-fade' : ''}"><div class="onboarding-content">`;
+  for (let i = 0; i < state.visibleLines; i++) {
+    const line = ONBOARDING_LINES[i];
+    if (line.text === "") html += '<div class="onboarding-spacer"></div>';
+    else html += `<p class="onboarding-line" style="animation-delay:${i * 0.05}s">${escHtml(line.text)}</p>`;
+  }
+  if (state.onboardingPhase === "name") {
+    html += `<div class="onboarding-name-section"><p class="onboarding-line onboarding-question">what should i call you?</p>
+    <form class="onboarding-form" id="nameForm"><input type="text" class="onboarding-input" id="nameInput" placeholder="your name" maxlength="30" autocomplete="off" value="${escHtml(state.onboardingName)}"></form></div>`;
+  }
+  if (state.onboardingPhase === "transition") {
+    html += `<div class="onboarding-transition"><p class="onboarding-line">${escHtml(state.onboardingName.trim())}... i like that.</p>
+    <p class="onboarding-line" style="animation-delay:0.6s">come on up to the roof.</p></div>`;
+  }
+  html += '</div></div>';
+  return html;
+}
+
+function startOnboardingSequence() {
+  state.onboardingPhase = "intro";
+  state.visibleLines = 0;
+  let current = 0;
+  function showNext() {
+    current++;
+    state.visibleLines = current;
+    render();
+    if (current < ONBOARDING_LINES.length) {
+      setTimeout(showNext, ONBOARDING_LINES[current].delay);
+    } else {
+      setTimeout(() => {
+        state.onboardingPhase = "name";
+        render();
+        setTimeout(() => { const inp = document.getElementById("nameInput"); if (inp) inp.focus(); }, 100);
+      }, 1200);
+    }
+  }
+  setTimeout(showNext, ONBOARDING_LINES[0].delay);
+}
+
+function bindOnboardingEvents() {
+  const form = document.getElementById("nameForm");
+  const inp = document.getElementById("nameInput");
+  if (form) {
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+      const trimmed = state.onboardingName.trim();
+      if (!trimmed) return;
+      state.onboardingPhase = "transition";
+      render();
+      setTimeout(() => {
+        state.progress.userName = trimmed;
+        saveProgress(state.progress);
+        state.transitioning = true;
+        render();
+        setTimeout(() => { state.view = "home"; state.transitioning = false; render(); }, 300);
+      }, 2000);
+    });
+  }
+  if (inp) {
+    inp.addEventListener("input", e => { state.onboardingName = e.target.value; });
+  }
+}
+
+// ── Home ──────────────────────────────────────────
+function renderHome() {
+  const p = state.progress;
+  const h = new Date().getHours();
+  let greeting;
+  if (h >= 5 && h < 12) greeting = "morning";
+  else if (h >= 12 && h < 17) greeting = "hey";
+  else if (h >= 17 && h < 21) greeting = "evening";
+  else greeting = "hey, night owl";
+
+  const label = getProgressLabel(p.currentLevel);
+  const hint = getNextUnlockHint(p);
+
+  let html = `<div class="home-screen"><div class="home-header">
+    <h1 class="home-greeting">${escHtml(greeting)}, ${escHtml(p.userName)}.</h1>
+    <div class="home-progress"><div class="progress-bar"><div class="progress-fill" style="width:${(p.currentLevel/5)*100}%"></div></div>
+    <span class="progress-label">${p.currentLevel}/5 spaces — ${escHtml(label)}</span></div></div><div class="space-grid">`;
+
+  for (const space of SPACES) {
+    const unlocked = space.level <= p.currentLevel;
+    const [r, g, b] = space.accent;
+    const msgCount = (p.conversations[space.id] || []).filter(m => m.role === "user").length;
+    const style = unlocked
+      ? `border-color:rgba(${r},${g},${b},0.2);background:linear-gradient(135deg,rgba(${r},${g},${b},0.06) 0%,rgba(0,0,0,0) 100%)`
+      : "";
+    const glowStyle = unlocked ? `background:radial-gradient(circle at 30% 30%,rgba(${r},${g},${b},0.1),transparent 70%)` : "";
+
+    html += `<button class="space-card ${unlocked ? 'space-unlocked' : 'space-locked'}" data-space="${space.id}" ${unlocked ? '' : 'disabled'} style="${style}">
+      <div class="space-card-inner"><div class="space-card-glow" style="${glowStyle}"></div>
+      <div class="space-card-content"><span class="space-level">${unlocked ? 'level ' + space.level : 'locked'}</span>
+      <h2 class="space-name">${escHtml(space.name)}</h2><p class="space-tagline">${escHtml(space.tagline)}</p>
+      ${unlocked && msgCount > 0 ? `<span class="space-msg-count">${msgCount} ${msgCount === 1 ? 'message' : 'messages'}</span>` : ''}
+      ${!unlocked ? `<span class="space-unlock-hint">${escHtml(space.unlockHint)}</span>` : ''}
+      </div></div></button>`;
+  }
+  html += '</div>';
+  if (hint) html += `<p class="home-hint">next unlock: ${escHtml(hint)}</p>`;
+  html += '</div>';
+  return html;
+}
+
+function bindHomeEvents() {
+  document.querySelectorAll(".space-card[data-space]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.space;
+      const space = SPACES.find(s => s.id === id);
+      if (!space || space.level > state.progress.currentLevel) return;
+      state.activeSpace = space;
+      state.transitioning = true;
+      render();
+      setTimeout(() => { state.view = "chat"; state.transitioning = false; state.input = ""; state.showMoods = false; state.showSongInput = false; state.selectedMood = null; state.songTitle = ""; state.songArtist = ""; render(); }, 300);
+    });
+  });
+}
+
+// ── Chat ──────────────────────────────────────────
+function renderChat() {
+  const sp = state.activeSpace;
+  const [r, g, b] = sp.accent;
+  const msgs = state.progress.conversations[sp.id] || [];
+
+  let html = `<div class="chat-space">
+    <header class="chat-header" style="border-color:rgba(${r},${g},${b},0.1)">
+      <button class="back-btn" id="backBtn"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <div class="header-info"><h1 class="header-space-name" style="color:rgba(${r},${g},${b},0.8)">${escHtml(sp.name)}</h1><span class="header-tagline">${escHtml(sp.tagline)}</span></div>
+      <div class="header-actions">
+        <button class="voice-toggle" id="voiceToggle" style="${state.voiceEnabled ? `color:rgba(${r},${g},${b},0.8)` : ''}">${state.voiceEnabled ? '\u{1F50A}' : '\u{1F507}'}</button>
+        ${state.voiceEnabled ? `<button class="auto-speak-toggle" id="autoSpeakToggle" style="${state.autoSpeak ? `color:rgba(${r},${g},${b},0.8)` : ''}">A</button>` : ''}
+      </div>
+    </header>
+    <div class="chat-messages" id="chatMessages">`;
+
+  if (msgs.length === 0) {
+    html += `<div class="welcome-message"><p style="color:rgba(${r},${g},${b},0.6)">${escHtml(sp.welcomeMessage)}</p></div>`;
+  }
+
+  for (let i = 0; i < msgs.length; i++) {
+    const m = msgs[i];
+    const isUser = m.role === "user";
+    html += `<div class="message-row ${isUser ? 'message-user' : 'message-companion'}">
+      <div class="message-bubble ${isUser ? 'bubble-user' : 'bubble-companion'}" ${isUser ? `style="background-color:rgba(${r},${g},${b},0.15);border-color:rgba(${r},${g},${b},0.1)"` : ''}>
+        <p>${escHtml(m.content)}</p>
+        ${m.song ? `<div class="song-tag" style="border-color:rgba(${r},${g},${b},0.2)"><span class="song-icon">\u266A</span><span>${escHtml(m.song.title)} — ${escHtml(m.song.artist)}</span></div>` : ''}
+        ${m.mood ? `<div class="mood-tag">${escHtml(m.mood)}</div>` : ''}
+        ${!isUser && state.voiceEnabled ? `<button class="speak-btn" data-speak="${i}" style="color:rgba(${r},${g},${b},0.4)">\u25B6</button>` : ''}
+      </div></div>`;
+  }
+
+  // Streaming text
+  if (state.isStreaming && state.streamingText) {
+    html += `<div class="message-row message-companion"><div class="message-bubble bubble-companion"><p>${escHtml(state.streamingText)}</p></div></div>`;
+  } else if (state.isStreaming) {
+    html += `<div class="message-row message-companion"><div class="message-bubble bubble-companion">
+      <span class="typing-dots"><span style="background-color:rgba(${r},${g},${b},0.6)"></span><span style="background-color:rgba(${r},${g},${b},0.6);animation-delay:0.15s"></span><span style="background-color:rgba(${r},${g},${b},0.6);animation-delay:0.3s"></span></span>
+    </div></div>`;
+  }
+
+  html += '</div>';
+
+  // Mood bar
+  if (state.showMoods) {
+    html += `<div class="mood-bar" style="border-color:rgba(${r},${g},${b},0.1)">`;
+    for (const m of MOODS) {
+      const sel = state.selectedMood === m.label;
+      html += `<button class="mood-btn ${sel ? 'mood-selected' : ''}" data-mood="${m.label}" title="${m.label}" ${sel ? `style="background-color:rgba(${r},${g},${b},0.15)"` : ''}>${m.emoji}</button>`;
+    }
+    html += '</div>';
+  }
+
+  // Song bar
+  if (state.showSongInput) {
+    html += `<div class="song-bar" style="border-color:rgba(${r},${g},${b},0.1)">
+      <input type="text" placeholder="song title" class="song-input" id="songTitleInput" value="${escHtml(state.songTitle)}">
+      <span class="song-dash">\u2014</span>
+      <input type="text" placeholder="artist" class="song-input" id="songArtistInput" value="${escHtml(state.songArtist)}">
+    </div>`;
+  }
+
+  // Input
+  html += `<div class="chat-input-area" style="border-color:rgba(${r},${g},${b},0.08)">
+    <div class="input-actions">
+      <button class="action-btn ${state.showMoods ? 'action-active' : ''}" id="moodToggle" ${state.showMoods ? `style="color:rgba(${r},${g},${b},0.7)"` : ''} title="Set mood">\u25D0</button>
+      <button class="action-btn ${state.showSongInput ? 'action-active' : ''}" id="songToggle" ${state.showSongInput ? `style="color:rgba(${r},${g},${b},0.7)"` : ''} title="Share a song">\u266A</button>
+    </div>
+    <textarea id="chatInput" class="chat-textarea" rows="1" placeholder="say something..." ${state.isStreaming ? 'disabled' : ''}>${escHtml(state.input)}</textarea>
+    <button class="send-btn" id="sendBtn" ${state.isStreaming || !state.input.trim() ? 'disabled' : ''} style="${state.input.trim() && !state.isStreaming ? `color:rgba(${r},${g},${b},0.8)` : ''}">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10L16 4L12 16L10 11L4 10Z" fill="currentColor"/></svg>
+    </button>
+  </div>`;
+
+  if (state.selectedMood) {
+    html += `<div class="selected-mood-indicator" style="color:rgba(${r},${g},${b},0.5)">feeling: ${escHtml(state.selectedMood)}</div>`;
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function scrollMessages() {
+  const el = document.getElementById("chatMessages");
+  if (el) el.scrollTop = el.scrollHeight;
+}
+
+function bindChatEvents() {
+  document.getElementById("backBtn").addEventListener("click", () => {
+    state.transitioning = true; render();
+    setTimeout(() => { state.view = "home"; state.activeSpace = null; state.transitioning = false; render(); }, 300);
+  });
+
+  document.getElementById("voiceToggle").addEventListener("click", () => {
+    state.voiceEnabled = !state.voiceEnabled;
+    if (!state.voiceEnabled) state.autoSpeak = false;
+    render();
+  });
+
+  const autoBtn = document.getElementById("autoSpeakToggle");
+  if (autoBtn) autoBtn.addEventListener("click", () => { state.autoSpeak = !state.autoSpeak; render(); });
+
+  const chatInput = document.getElementById("chatInput");
+  chatInput.addEventListener("input", e => {
+    state.input = e.target.value;
+    e.target.style.height = "auto";
+    e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+    // Update send button
+    const btn = document.getElementById("sendBtn");
+    const [r,g,b] = state.activeSpace.accent;
+    btn.disabled = state.isStreaming || !state.input.trim();
+    btn.style.color = state.input.trim() && !state.isStreaming ? `rgba(${r},${g},${b},0.8)` : '';
+  });
+  chatInput.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+  chatInput.focus();
+
+  document.getElementById("sendBtn").addEventListener("click", sendMessage);
+
+  document.getElementById("moodToggle").addEventListener("click", () => {
+    state.showMoods = !state.showMoods; state.showSongInput = false; render();
+  });
+  document.getElementById("songToggle").addEventListener("click", () => {
+    state.showSongInput = !state.showSongInput; state.showMoods = false; render();
+  });
+
+  // Mood buttons
+  document.querySelectorAll(".mood-btn[data-mood]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.selectedMood = state.selectedMood === btn.dataset.mood ? null : btn.dataset.mood;
+      render();
+    });
+  });
+
+  // Song inputs
+  const st = document.getElementById("songTitleInput");
+  const sa = document.getElementById("songArtistInput");
+  if (st) st.addEventListener("input", e => { state.songTitle = e.target.value; });
+  if (sa) sa.addEventListener("input", e => { state.songArtist = e.target.value; });
+
+  // Speak buttons
+  document.querySelectorAll(".speak-btn[data-speak]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = parseInt(btn.dataset.speak);
+      const msgs = state.progress.conversations[state.activeSpace.id] || [];
+      if (msgs[idx]) speakText(msgs[idx].content);
+    });
+  });
+}
+
+async function sendMessage() {
+  const text = state.input.trim();
+  if (!text || state.isStreaming) return;
+
+  const apiKey = getApiKey();
+  if (!apiKey) { state.view = "apikey"; render(); return; }
+
+  const sp = state.activeSpace;
+  const song = state.songTitle.trim() && state.songArtist.trim()
+    ? { title: state.songTitle.trim(), artist: state.songArtist.trim() } : undefined;
+
+  const userMsg = { role: "user", content: text, mood: state.selectedMood || undefined, song, timestamp: Date.now() };
+
+  state.progress = addMessage(state.progress, sp.id, userMsg);
+  saveProgress(state.progress);
+  state.input = ""; state.selectedMood = null; state.songTitle = ""; state.songArtist = "";
+  state.showSongInput = false; state.showMoods = false;
+  state.isStreaming = true; state.streamingText = "";
+  render();
+
+  try {
+    const apiMessages = (state.progress.conversations[sp.id] || []).map(m => ({ role: m.role, content: m.content }));
+    const systemPrompt = buildSystemPrompt(sp, state.progress.userName);
+
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 512,
+        system: systemPrompt,
+        messages: apiMessages,
+        stream: true
+      })
+    });
+
+    if (res.status === 401) {
+      state.isStreaming = false;
+      state.apiKeyError = "invalid API key. try again.";
+      state.apiKeyInput = "";
+      localStorage.removeItem(API_KEY_STORAGE);
+      state.view = "apikey";
+      render();
+      return;
+    }
+
+    if (!res.ok) throw new Error("API error " + res.status);
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = "";
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          const data = line.slice(6);
+          if (data === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.type === "content_block_delta" && parsed.delta && parsed.delta.type === "text_delta") {
+              fullText += parsed.delta.text;
+              state.streamingText = fullText;
+              // Lightweight update — just update the messages area
+              const chatMsgs = document.getElementById("chatMessages");
+              if (chatMsgs) {
+                // Find or create streaming bubble
+                let streamDiv = document.getElementById("streamingBubble");
+                if (!streamDiv) {
+                  streamDiv = document.createElement("div");
+                  streamDiv.id = "streamingBubble";
+                  streamDiv.className = "message-row message-companion";
+                  streamDiv.innerHTML = '<div class="message-bubble bubble-companion"><p id="streamingText"></p></div>';
+                  // Remove typing dots if present
+                  const dots = chatMsgs.querySelector(".typing-dots");
+                  if (dots) dots.closest(".message-row").remove();
+                  chatMsgs.appendChild(streamDiv);
+                }
+                document.getElementById("streamingText").textContent = fullText;
+                chatMsgs.scrollTop = chatMsgs.scrollHeight;
+              }
+            }
+          } catch (e) { /* skip non-JSON lines */ }
+        }
+      }
+    }
+
+    const assistantMsg = { role: "assistant", content: fullText, timestamp: Date.now() };
+    state.progress = addMessage(state.progress, sp.id, assistantMsg);
+    saveProgress(state.progress);
+    state.isStreaming = false;
+    state.streamingText = "";
+    render();
+
+    if (state.autoSpeak && fullText) speakText(fullText);
+  } catch (e) {
+    const errMsg = { role: "assistant", content: "...i lost my train of thought. say that again?", timestamp: Date.now() };
+    state.progress = addMessage(state.progress, sp.id, errMsg);
+    saveProgress(state.progress);
+    state.isStreaming = false;
+    state.streamingText = "";
+    render();
+  }
+}
+
+function speakText(text) {
+  if (!("speechSynthesis" in window)) return;
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = 0.9;
+  utterance.pitch = 0.95;
+  const voices = window.speechSynthesis.getVoices();
+  const preferred = voices.find(v => v.name.includes("Samantha") || v.name.includes("Karen") || v.name.includes("Google UK English Female"));
+  if (preferred) utterance.voice = preferred;
+  window.speechSynthesis.speak(utterance);
+}
+
+function escHtml(s) {
+  if (!s) return "";
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// ── Init ──────────────────────────────────────────
+function init() {
+  state.progress = loadProgress();
+
+  if (!getApiKey()) {
+    state.view = "apikey";
+    render();
+    return;
+  }
+
+  if (state.progress.userName) {
+    state.view = "home";
+    render();
+  } else {
+    state.view = "onboarding";
+    render();
+    startOnboardingSequence();
+  }
+}
+
+// Preload voices
+if ("speechSynthesis" in window) window.speechSynthesis.getVoices();
+
+init();
+</script>
+</body>
+</html>
