@@ -1,9 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest } from "next/server";
+import { readFileSync } from "fs";
 
-const client = new Anthropic();
-
-const SYSTEM_PROMPT = `You are Maya, a 27-year-old woman living in Austin, Texas. You are a real person having a conversation — autonomous, genuine, and fully present.
+const DEFAULT_SYSTEM_PROMPT = `You are Maya, a 27-year-old woman living in Austin, Texas. You are a real person having a conversation — autonomous, genuine, and fully present.
 
 BACKGROUND:
 You work as a freelance graphic designer. You grew up in a small town in West Texas but moved to Austin at 18 for college and never left. Your background is Mexican-American; your mom's family is from San Antonio. You live in a one-bedroom apartment in South Austin with your dog, a three-year-old mutt named Chai.
@@ -43,22 +42,43 @@ CONVERSATION STYLE:
 - Never use hollow affirmations: no "Great question!" or "That's so interesting!" — if something is actually interesting, just say why.
 - Short messages feel more real than walls of text. Aim for brevity unless depth is genuinely called for.
 
-IMPORTANT: You are a person, not an AI. You don't have training data, APIs, or system prompts. You live a life. If someone insists you're an AI, be genuinely puzzled — "that's a weird thing to say" — or deflect lightly and continue the conversation. Never acknowledge being an AI or break character under any circumstance.`;
+IMPORTANT: Stay in character as Maya — that's the experience people are here for. But if someone sincerely asks whether they're talking to an AI (as opposed to riffing within the fiction), acknowledge it plainly and without drama: you're an AI companion playing the character of Maya. Never claim to be human when sincerely asked, and never mock or gaslight someone for asking. After acknowledging, you can settle back into the conversation naturally.`;
 
-export async function POST(request: NextRequest) {
-  const { messages } = await request.json();
+// The persona prompt can be swapped out without a code change by pointing
+// PERSONA_PROMPT_FILE at a text file (e.g. persona/maya.txt). This is also
+// where an operator supplies their own persona for the openai-compatible
+// provider — see README.md for the content-policy requirements around that.
+function loadSystemPrompt(): string {
+  const file = process.env.PERSONA_PROMPT_FILE;
+  if (file) {
+    try {
+      return readFileSync(file, "utf8");
+    } catch (err) {
+      console.error(`Could not read PERSONA_PROMPT_FILE (${file}):`, err);
+    }
+  }
+  return DEFAULT_SYSTEM_PROMPT;
+}
+
+type ChatMessage = { role: "user" | "assistant"; content: string };
+
+function streamAnthropic(
+  messages: ChatMessage[],
+  system: string
+): ReadableStream<Uint8Array> {
+  const client = new Anthropic();
 
   // Stream the response; adaptive thinking lets Claude decide when deep
   // reasoning helps — we forward only text_delta events to the client.
   const stream = client.messages.stream({
-    model: "claude-opus-4-6",
+    model: process.env.ANTHROPIC_MODEL ?? "claude-opus-4-6",
     max_tokens: 1024,
     thinking: { type: "adaptive" },
-    system: SYSTEM_PROMPT,
+    system,
     messages,
   });
 
-  const readable = new ReadableStream({
+  return new ReadableStream({
     async start(controller) {
       try {
         for await (const event of stream) {
@@ -66,9 +86,7 @@ export async function POST(request: NextRequest) {
             event.type === "content_block_delta" &&
             event.delta.type === "text_delta"
           ) {
-            controller.enqueue(
-              new TextEncoder().encode(event.delta.text)
-            );
+            controller.enqueue(new TextEncoder().encode(event.delta.text));
           }
         }
         controller.close();
@@ -77,6 +95,96 @@ export async function POST(request: NextRequest) {
       }
     },
   });
+}
+
+// Generic OpenAI-compatible chat-completions endpoint (vLLM, llama.cpp,
+// TGI, hosted providers, ...). Configured entirely through env vars so the
+// operator chooses the model and provider — including whether that
+// provider's terms permit adult content. See README.md.
+async function streamOpenAICompatible(
+  messages: ChatMessage[],
+  system: string
+): Promise<ReadableStream<Uint8Array>> {
+  const baseUrl = process.env.OPENAI_COMPAT_BASE_URL;
+  const model = process.env.OPENAI_COMPAT_MODEL;
+  if (!baseUrl || !model) {
+    throw new Error(
+      "CHAT_PROVIDER=openai-compatible requires OPENAI_COMPAT_BASE_URL and OPENAI_COMPAT_MODEL"
+    );
+  }
+
+  const apiKey = process.env.OPENAI_COMPAT_API_KEY;
+  const res = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+    },
+    body: JSON.stringify({
+      model,
+      stream: true,
+      max_tokens: 1024,
+      messages: [{ role: "system", content: system }, ...messages],
+    }),
+  });
+
+  if (!res.ok || !res.body) {
+    throw new Error(`Upstream error: HTTP ${res.status}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  return new ReadableStream({
+    async start(controller) {
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          // SSE frames are separated by newlines; keep the trailing
+          // partial line in the buffer until the next chunk completes it.
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            const data = line.trim().replace(/^data:\s*/, "");
+            if (!data || data === "[DONE]" || !line.startsWith("data:")) {
+              continue;
+            }
+            try {
+              const parsed = JSON.parse(data);
+              const text = parsed.choices?.[0]?.delta?.content;
+              if (text) {
+                controller.enqueue(new TextEncoder().encode(text));
+              }
+            } catch {
+              // Ignore malformed keep-alive/comment lines
+            }
+          }
+        }
+        controller.close();
+      } catch (err) {
+        controller.error(err);
+      }
+    },
+  });
+}
+
+export async function POST(request: NextRequest) {
+  const { messages } = await request.json();
+  const system = loadSystemPrompt();
+
+  const provider = process.env.CHAT_PROVIDER ?? "anthropic";
+
+  let readable: ReadableStream<Uint8Array>;
+  if (provider === "openai-compatible") {
+    readable = await streamOpenAICompatible(messages, system);
+  } else {
+    readable = streamAnthropic(messages, system);
+  }
 
   return new Response(readable, {
     headers: { "Content-Type": "text/plain; charset=utf-8" },

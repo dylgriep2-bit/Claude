@@ -333,3 +333,83 @@ body {
   height: 18px;
   fill: white;
 }
+
+/* ── AI disclosure ────────────────────────────── */
+
+.disclosure {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ── Age gate ─────────────────────────────────── */
+
+.age-gate {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.age-gate-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 24px;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.age-gate-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.age-gate-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.age-gate-denied {
+  color: var(--text);
+}
+
+.age-gate-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.age-gate-confirm,
+.age-gate-deny {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: var(--font);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.15s;
+}
+
+.age-gate-confirm {
+  background: var(--accent);
+  color: white;
+}
+
+.age-gate-confirm:active {
+  background: var(--accent-hover);
+}
+
+.age-gate-deny {
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
